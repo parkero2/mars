@@ -1,7 +1,7 @@
 {
-    "configuration": "cpu=atmega328",
-    "board": "arduino:avr:nano",
-    "sketch": "compass\\compass.ino",
+    "configuration": "cpu=atmega2560",
+    "board": "arduino:avr:mega",
+    "sketch": "gps2\\gps2.ino",
     "port": "COM3",
     "programmer": "avrispmkii"
 }
