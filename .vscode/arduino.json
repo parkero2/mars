@@ -1,7 +1,7 @@
 {
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:mega",
-    "sketch": "gps2\\gps2.ino",
+    "sketch": "j\\j.ino",
     "port": "COM3",
     "programmer": "avrispmkii"
 }
