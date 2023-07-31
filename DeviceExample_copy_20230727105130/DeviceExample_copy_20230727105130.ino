@@ -13,6 +13,9 @@ static const uint32_t GPSBaud = 9600;
 TinyGPSPlus gps;
 LCD_I2C lcd(0x27, 20, 4);
 
+const long ln1 = -37.696261;
+const long lt1 = 176.133278;
+
 // The serial connection to the GPS device
 SoftwareSerial ss(RXPin, TXPin);
 
@@ -30,12 +33,19 @@ void setup()
   Serial.println();
 }
 
-void loop()
-{
-  // This sketch displays information every time a new sentence is correctly encoded.
+void doGPS() {
+  Serial.end();
+  Serial1.begin(GPSBaud);
   while (Serial1.available() > 0)
     if (gps.encode(Serial1.read()))
       displayInfo();
+}
+
+void loop()
+{
+  // This sketch displays information every time a new sentence is correctly encoded.
+  doGPS();
+  displayInfo();
 
   if (millis() > 5000 && gps.charsProcessed() < 10)
   {
