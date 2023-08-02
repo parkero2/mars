@@ -1,7 +1,10 @@
 #include <math.h>
-#include <LCD_I2C.h>
-#include <TinyGPSPlus.h>
-#include <SoftwareSerial.h>
+#include <Arduino.h>
+
+// Other libaries, included in the project folder
+#include "include/LCD_I2C/src/LCD_I2C.h"
+#include "include/TinyGPSPlus/src/TinyGPSPlus.h"
+#include "include/IRremote/src/IRremote.h"
 
 /*
    This sample sketch demonstrates the normal use of a TinyGPSPlus (TinyGPSPlus) object.
@@ -17,19 +20,10 @@ LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change acc
 
 //updateGPS(); will reset Serial communication between the Arduino and the GPS module
 
-double lat1;
-double lat2;
-double lon1;
-double lon2;
-double latR1;
-double latR2;
-double lonR1;
-double lonR2;
-double dlon;
-double dlat;
-double a;
-double e;
-double d;
+double lat1, lat2, lon1, lon2;
+double latR1, latR2, lonR1, lonR2;
+double dlon, dlat;
+double a, e, d;
 double R = 6371.00;
 double toDegrees = 57.295779;
 char sb[10];
