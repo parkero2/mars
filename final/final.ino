@@ -1,5 +1,6 @@
 #include <math.h>
 #include <Arduino.h>
+#include <HardwareSerial.h>
 
 // Other libaries, included in the project folder
 #include "include/LCD_I2C/src/LCD_I2C.h"
@@ -24,8 +25,7 @@ double lat1, lat2, lon1, lon2;
 double latR1, latR2, lonR1, lonR2;
 double dlon, dlat;
 double a, e, d;
-double R = 6371.00;
-double toDegrees = 57.295779;
+double R = 6371.00, toDegrees = 57.295779;
 char sb[10];
 
 bool setStart = true;
@@ -47,7 +47,7 @@ void setup()
   pinMode(setLocation, INPUT_PULLUP); // Connect 1k resistor between pin and +5V
 }
 
-void displayInfo()
+void displayLocation()
 {
 
   if (gps.location.isValid())
@@ -57,9 +57,12 @@ void displayInfo()
     lcd.println(gps.location.lat());
     lcd.setCursor(0, 1);
     lcd.println(gps.location.lng());
-    delay(10000);
   }
-
+  else
+  {
+    lcd.clear();
+    lcd.println("Location not found");
+  }
   Serial.println();
 }
 
@@ -79,12 +82,11 @@ void loop()
 {
 
   // Setting the start/end location
-  if (!digitalRead(setLocation))
+  if (!digitalRead(setLocation) && gps.location.isValid())
   {
-    lcd.clear();
     // Set the current location
-    setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat();
-    setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng();
+    setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat(); // If setStart is true, set lat1, else set lat2
+    setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng(); // If setStart is true, set lon1, else set lon2
     String Start = setStart ? "Start loc: " + String(lat1, 6) + ", " + String(lon1, 6) : "End loc" + String(lat1, 6) + ", " + String(lon1, 6);
     lcd.print(Start);
     setStart = !setStart;
@@ -94,6 +96,13 @@ void loop()
 
   // This sketch displays information every time a new sentence is correctly encoded.
 
+  GPSRead();
+
+  calcdist(); // Call the distance and bearing calculation function
+}
+
+void GPSRead()
+{
   if (millis() > 5000 && gps.charsProcessed() < 10)
   {
     Serial.println(F("No GPS detected: check wiring."));
@@ -108,21 +117,6 @@ void loop()
     if (gps.encode(Serial1.read()))
       displayInfo();
   }
-  // Get Starting GPS Coordinates
-  lon1 = gps.location.lng();
-  lat1 = gps.location.lat();
-  String Start = "GPS Starting Location: " + String(lat1, 6) + ", " + String(lon1, 6);
-  lcd.print(Start);
-  delay(10000);
-
-  // Get Destination GPS Coordinates
-  lat2 = -37.677285;
-  lon2 = 176.130491;
-  String Dest = "GPS Destination Location: " + String(lat2, 6) + ", " + String(lon2, 6);
-  Serial.print(Dest);
-  delay(10000);
-
-  calcdist(); // Call the distance and bearing calculation function
 }
 
 /*-----------------------------Distance & Bearing Calculator---------------------------------*/
