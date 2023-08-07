@@ -3,8 +3,8 @@
 #include <HardwareSerial.h>
 
 // Other libaries, included in the project folder
-#include "include/LCD_I2C/src/LCD_I2C.h"
-#include "include/TinyGPSPlus/src/TinyGPSPlus.h"
+#include <LCD_I2C.h>
+#include <TinyGPSPlus.h>
 // #include "include/IRremote/src/IRremote.h"
 
 /*
@@ -45,6 +45,8 @@ void setup()
   // displayInfo();
   lcd.clear();
   pinMode(setLocation, INPUT_PULLUP); // Connect 1k resistor between pin and +5V
+  Serial.println("READY");
+  delay(1000);
 }
 
 void displayLocation()
@@ -53,10 +55,16 @@ void displayLocation()
   if (gps.location.isValid())
   {
     lcd.clear();
-    lcd.setCursor(0, 0);
+    lcd.setCursor(1, 0);
+    lcd.print("Lat: ");
     lcd.println(gps.location.lat());
-    lcd.setCursor(0, 1);
+    lcd.setCursor(1, 2);
+    lcd.print("Lng: ");
     lcd.println(gps.location.lng());
+    Serial.print("Lat: ");
+    Serial.println(gps.location.lat());
+    Serial.print("Lng: ");
+    Serial.println(gps.location.lng());
   }
   else
   {
@@ -73,7 +81,7 @@ void updateGPS()
   while (Serial1.available() > 0)
   {
     if (gps.encode(Serial1.read()))
-      displayInfo();
+      displayLocation();
   }
 }
 
@@ -98,7 +106,7 @@ void loop()
 
   GPSRead();
 
-  calcdist(); // Call the distance and bearing calculation function
+  //calcdist(); // Call the distance and bearing calculation function
 }
 
 void GPSRead()
@@ -115,7 +123,7 @@ void GPSRead()
   while (Serial1.available() > 0)
   {
     if (gps.encode(Serial1.read()))
-      displayInfo();
+      displayLocation();
   }
 }
 
