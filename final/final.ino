@@ -4,8 +4,9 @@
 
 // Other libaries, included in the project folder
 #include <LCD_I2C.h>
-#include <TinyGPSPlus.h>
+#include <TinyGPS++.h>
 // #include "include/IRremote/src/IRremote.h"
+#include "./include/DRV/MotorDrive.h"
 
 /*
    This sample sketch demonstrates the normal use of a TinyGPSPlus (TinyGPSPlus) object.
