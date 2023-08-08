@@ -1,4 +1,4 @@
-# mars
+# Mars
 
 ## Repo for L3 ELEC mars rover project
 [Current](final/final.ino) working code for the final product.
