@@ -3,8 +3,8 @@
 #include <HardwareSerial.h>
 
 // Other libaries, included in the project folder
-#include <LCD_I2C.h>
-#include <TinyGPS++.h>
+#include <TinyGPSPlus.h>
+#include "./include/LCD_I2C/LCD_I2C.h"
 #include "./include/IRremote/src/IRremote.h"
 #include "./include/DRV/MotorDrive.h"
 
@@ -13,9 +13,7 @@ static const uint32_t GPSBaud = 9600;
 
 // The TinyGPSPlus object
 TinyGPSPlus gps;
-LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change according
-
-// updateGPS(); will reset Serial communication between the Arduino and the GPS module
+LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change accordingly
 
 double lat1, lat2, lon1, lon2;
 double latR1, latR2, lonR1, lonR2;
@@ -60,25 +58,23 @@ void setup()
 /*-----------------------------Main Loop---------------------------------*/
 void loop()
 {
-
   // Setting the start/end location
   if (!digitalRead(setLocation) && gps.location.isValid())
-  {
-    // Set the current location
+  { // if the button is depressed (PULL UP), and GPS is valid
     setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat(); // If setStart is true, set lat1, else set lat2
     setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng(); // If setStart is true, set lon1, else set lon2
-    String Start = setStart ? "Start loc: " + String(lat1, 6) + ", " + String(lon1, 6) : "End loc" + String(lat1, 6) + ", " + String(lon1, 6);
+    displayLocation();
     lcd.print(Start);
     setStart = !setStart;
-    while (!digitalRead(setLocation))
-      ;
+    while (!digitalRead(setLocation));
   }
-
-  // This sketch displays information every time a new sentence is correctly encoded.
-
+  else if (!digitalRead(setLocation)) {
+    Serial.println("GPS cannot be validated");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.println("GPS INVALID")
+  }
   GPSRead();
-
-  //calcdist(); // Call the distance and bearing calculation function
 }
 
 void displayLocation()
@@ -106,19 +102,6 @@ void displayLocation()
   Serial.println();
 }
 
-void updateGPS()
-{
-  // Reset GPS communication
-  Serial1.begin(GPSBaud);
-  while (Serial1.available() > 0)
-  {
-    if (gps.encode(Serial1.read()))
-      displayLocation();
-  }
-}
-
-
-
 void GPSRead()
 {
   if (millis() > 5000 && gps.charsProcessed() < 10)
@@ -128,8 +111,7 @@ void GPSRead()
     while (true)
       ;
   }
-  while (!Serial1.available() > 0)
-    ;
+  while (!Serial1.available() > 0);
   while (Serial1.available() > 0)
   {
     if (gps.encode(Serial1.read()))

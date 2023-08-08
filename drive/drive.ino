@@ -1,4 +1,4 @@
-int rf = 10, rb = 11, lf = 6, lb = 9;
+int rf = 10, rb = 11, lf = 9, lb = 8;
 int spdr, spdl;
 int dmode = 0;
 

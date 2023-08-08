@@ -1,7 +1,7 @@
 {
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:mega",
-    "sketch": "final\\final.ino",
+    "sketch": "drive\\drive.ino",
     "port": "COM3",
     "programmer": "avrispmkii"
 }
