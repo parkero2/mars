@@ -1,3 +1,16 @@
+
+/*
+  STEPS:
+  1. Set the end location using IR remote
+  2. move rover to the start location
+  3. Set the start location using IR remote
+  4. Rover grabs GPS coordinates
+  5. Rover grabs compass heading
+  6. Rover moves to end location
+    - If rover is off course, it will correct itself
+  7. Rover stops at end location
+*/
+
 #include <math.h>
 #include <Arduino.h>
 #include <HardwareSerial.h>
@@ -16,11 +29,9 @@ TinyGPSPlus gps;
 LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change accordingly
 
 double lat1, lat2, lon1, lon2;
-double latR1, latR2, lonR1, lonR2;
 double dlon, dlat;
 double a, e, d;
-double R = 6371.00, toDegrees = 57.295779;
-char sb[10];
+double R = 6371.00;
 
 bool setStart = true;
 int setLocation; // Pin to set the current location
@@ -64,7 +75,13 @@ void loop()
     setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat(); // If setStart is true, set lat1, else set lat2
     setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng(); // If setStart is true, set lon1, else set lon2
     displayLocation();
-    lcd.print(Start);
+    Serial.println("GPS set to: ");
+    Serial.print("Lat: ");
+    Serial.println(gps.location.lat());
+    Serial.print("Lng: ");
+    Serial.println(gps.location.lng());
+    lcd.setCursor(4, 0);
+    lcd.println("GPS LOC SET ✔️"); // the tick might break shit; that's not my problem
     setStart = !setStart;
     while (!digitalRead(setLocation));
   }
@@ -72,7 +89,7 @@ void loop()
     Serial.println("GPS cannot be validated");
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.println("GPS INVALID")
+    lcd.println("GPS INVALID");
   }
   GPSRead();
 }
