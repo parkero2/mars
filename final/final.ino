@@ -5,7 +5,7 @@
   2. move rover to the start location
   3. Set the start location using IR remote
   4. Rover grabs GPS coordinates
-  5. Rover grabs compass heading
+  5. Rover grabs compass deg
   6. Rover moves to end location
     - If rover is off course, it will correct itself
   7. Rover stops at end location
@@ -35,7 +35,7 @@ double dlon, dlat;
 double a, e, d;
 double R = 6371.00;
 
-double bearing, cbearing;
+float deg, cdeg, headng;
 
 //Static offets for compass/megnetometer
 static double x_offset = 0.0, y_offset = 0.0, z_offset = 0.0;
@@ -83,29 +83,36 @@ void loop()
   positionHandle();
   if (!readyTD) return;
   // We have the start and end locations
-  // Calculate the bearing from the rover's current location to the end location
+  // Calculate the deg from the rover's current location to the end location
   // lon2, lat2 is the end location. gps.location.lng(), gps.location.lat() is the current location
   
   //COMPASS STUFF
-  norm = compass.readNormalize();
-  cbearing = atan2(norm.YAxis, norm.XAxis);
-  cbearing += (20.0 + (51.0 / 60.0)) / (180 / M_PI); // Declination angle for the location of the rover (Tauranga, NZ)
-  // Correct for heading < 0deg and heading > 360deg
-  if (cbearing < 0) cbearing += 2 * M_PI; 
-  if (cbearing > 2 * M_PI) cbearing -= 2 * M_PI;
-  // Convert from radians to degrees
-  cbearing = cbearing * 180 / M_PI;
-
-  bearing = calcBearing(gps.location.lat(), gps.location.lng(), lat2, lon2);
+  // Calculate the deg from the rover's current location to the end location
   
+  deg = calcdeg(gps.location.lat(), gps.location.lng(), lat2, lon2);
+  while (getCompass() < deg - 5.0 || getCompass() > deg + 5.0)
+  {
+    // Turn the rover to the correct deg
+    left();
+    delay(50);
+  }
+  fwd();
 }
 
-/*-----------------------------Bearing Calculation-----------------------------*/
+/*-----------------------------deg Calculation-----------------------------*/
 
 double toRad(double deg) { return deg * (PI / 180); }
 
-double calcBearing(double la1, double lo1, double la2, double lo2) {
+double calcdeg(double la1, double lo1, double la2, double lo2) {
   return atan2(sin(toRad(lo2 - lo1)) * cos(toRad(la2)), cos(toRad(la1)) * sin(toRad(la2)) - sin(toRad(la1)) * cos(toRad(la2)) * cos(toRad(lo2 - lo1)));
+}
+
+float getCompass() {
+  norm = compass.readNormalize();
+  headng = atan2(norm.YAxis, norm.XAxis) + float(4.0 + (26.0 / 60.0)) / (180 / M_PI);
+  if (headng < 0) headng += 2 * M_PI;
+  if (headng > 2 * M_PI) headng -= 2 * M_PI;
+  return headng * 180 / M_PI;
 }
 
 void positionHandle()
