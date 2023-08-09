@@ -19,7 +19,7 @@
 #include <TinyGPSPlus.h>
 #include <HMC5883L.h>
 #include <LCD_I2C.h>
-#include "./include/IRremote/src/IRremote.h"
+#include "./include/IRremote/src/IRremote.hpp"
 #include "./include/DRV/MotorDrive.h"
 
 static const int RXPin = 4, TXPin = 3;
@@ -47,6 +47,8 @@ int setLocation; // Pin to set the current location
 int lf, lb, rf, rb, sp;
 int irpin = 2;
 
+static int setCode = 0x11;
+
 /*-----------------------------Setup---------------------------------*/
 void setup()
 {
@@ -73,6 +75,8 @@ void setup()
   pinMode(rb, OUTPUT);
   pinMode(sp, OUTPUT);
 
+  IrReceiver.begin(irpin, ENABLE_LED_FEEDBACK);
+
   compassInit();
 }
 
@@ -92,7 +96,7 @@ void loop()
   deg = calcdeg(gps.location.lat(), gps.location.lng(), lat2, lon2);
   while (getCompass() < deg - 5.0 || getCompass() > deg + 5.0)
   {
-    // Turn the rover to the correct deg
+    // Turn the rover to `the correct deg
     left();
     delay(50);
   }
@@ -117,11 +121,19 @@ float getCompass() {
 
 void positionHandle()
 {
+  if (readyTD) return;
+  if (IrReceiver.decode()) {
+    if (IrReceiver.decodedIRData.command == setCode) {
+      Serial.println("SET");
+      
+      readyTD = true;
+    }
+  }
   // Setting the start/end location
   Serial.println("GPS HANDLE");
 
   // Change to !digitalRead(setLocation)
-  if (digitalRead(setLocation) && gps.location.isValid())
+  if (IrReceiver.decode() && gps.location.isValid() && !setStart)
   {                                                                   // if the button is depressed (PULL UP), and GPS is valid
     setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat(); // If setStart is true, set lat1, else set lat2
     setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng(); // If setStart is true, set lon1, else set lon2
@@ -134,15 +146,7 @@ void positionHandle()
     lcd.setCursor(4, 0);
     lcd.println("GPS LOC SET ✔️"); // the tick might break shit; that's not my problem
     setStart = !setStart;
-    while (digitalRead(setLocation));
-  }
-  else if (digitalRead(setLocation))
-  {
-    Serial.println("GPS cannot be validated");
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.println("GPS INVALID");
-    return;
+    readyTD = false == false;
   }
 }
 
