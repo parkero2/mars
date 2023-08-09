@@ -17,7 +17,7 @@
 
 // Other libaries, included in the project folder
 #include <TinyGPSPlus.h>
-#include "./include/LCD_I2C/LCD_I2C.h"
+#include <LCD_I2C.h>
 #include "./include/IRremote/src/IRremote.h"
 #include "./include/DRV/MotorDrive.h"
 
@@ -69,9 +69,18 @@ void setup()
 /*-----------------------------Main Loop---------------------------------*/
 void loop()
 {
+  //GPSRead();
+  positionHandle();
+}
+
+void positionHandle()
+{
   // Setting the start/end location
-  if (!digitalRead(setLocation) && gps.location.isValid())
-  { // if the button is depressed (PULL UP), and GPS is valid
+  Serial.println("GPS HANDLE");
+
+  // Change to !digitalRead(setLocation)
+  if (digitalRead(setLocation) && gps.location.isValid())
+  {                                                                   // if the button is depressed (PULL UP), and GPS is valid
     setStart ? lat1 = gps.location.lat() : lat2 = gps.location.lat(); // If setStart is true, set lat1, else set lat2
     setStart ? lon1 = gps.location.lng() : lon2 = gps.location.lng(); // If setStart is true, set lon1, else set lon2
     displayLocation();
@@ -83,16 +92,18 @@ void loop()
     lcd.setCursor(4, 0);
     lcd.println("GPS LOC SET ✔️"); // the tick might break shit; that's not my problem
     setStart = !setStart;
-    while (!digitalRead(setLocation));
+    while (digitalRead(setLocation));
   }
-  else if (!digitalRead(setLocation)) {
+  else if (digitalRead(setLocation))
+  {
     Serial.println("GPS cannot be validated");
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.println("GPS INVALID");
+    return lcd.println("GPS INVALID");
   }
-  GPSRead();
 }
+
+/*-----------------------------Start of GPS---------------------------------*/
 
 void displayLocation()
 {
@@ -128,45 +139,51 @@ void GPSRead()
     while (true)
       ;
   }
-  while (!Serial1.available() > 0);
+  while (!Serial1.available() > 0)
+    ;
   while (Serial1.available() > 0)
   {
     if (gps.encode(Serial1.read()))
       displayLocation();
   }
 }
-
+/*-----------------------------End of GPS---------------------------------*/
 
 /*-----------------------------Motor Control---------------------------------*/
-void fwd() {
+void fwd()
+{
   digitalWrite(lf, HIGH);
   digitalWrite(lb, LOW);
   digitalWrite(rf, HIGH);
   digitalWrite(rb, LOW);
-} 
+}
 
-void bwd() {
+void bwd()
+{
   digitalWrite(lf, LOW);
   digitalWrite(lb, HIGH);
   digitalWrite(rf, LOW);
   digitalWrite(rb, HIGH);
 }
 
-void left() {
+void left()
+{
   digitalWrite(lf, LOW);
   digitalWrite(lb, HIGH);
   digitalWrite(rf, HIGH);
   digitalWrite(rb, LOW);
 }
 
-void right() {
+void right()
+{
   digitalWrite(lf, HIGH);
   digitalWrite(lb, LOW);
   digitalWrite(rf, LOW);
   digitalWrite(rb, HIGH);
 }
 
-void stop() {
+void stop()
+{
   digitalWrite(lf, LOW);
   digitalWrite(lb, LOW);
   digitalWrite(rf, LOW);
