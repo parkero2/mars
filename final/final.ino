@@ -17,6 +17,7 @@
 
 // Other libaries, included in the project folder
 #include <TinyGPSPlus.h>
+#include <HMC5883L.h>
 #include <LCD_I2C.h>
 #include "./include/IRremote/src/IRremote.h"
 #include "./include/DRV/MotorDrive.h"
@@ -26,6 +27,7 @@ static const uint32_t GPSBaud = 9600;
 
 // The TinyGPSPlus object
 TinyGPSPlus gps;
+HMC5883L compass;
 LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change accordingly
 
 double lat1, lat2, lon1, lon2;
@@ -33,7 +35,13 @@ double dlon, dlat;
 double a, e, d;
 double R = 6371.00;
 
-bool setStart = true;
+double bearing, cbearing;
+
+//Static offets for compass/megnetometer
+static double x_offset = 0.0, y_offset = 0.0, z_offset = 0.0;
+Vector norm;
+
+bool setStart = true, readyTD = false;
 int setLocation; // Pin to set the current location
 
 int lf, lb, rf, rb, sp;
@@ -64,6 +72,8 @@ void setup()
   pinMode(rf, OUTPUT);
   pinMode(rb, OUTPUT);
   pinMode(sp, OUTPUT);
+
+  compassInit();
 }
 
 /*-----------------------------Main Loop---------------------------------*/
@@ -71,6 +81,31 @@ void loop()
 {
   //GPSRead();
   positionHandle();
+  if (!readyTD) return;
+  // We have the start and end locations
+  // Calculate the bearing from the rover's current location to the end location
+  // lon2, lat2 is the end location. gps.location.lng(), gps.location.lat() is the current location
+  
+  //COMPASS STUFF
+  norm = compass.readNormalize();
+  cbearing = atan2(norm.YAxis, norm.XAxis);
+  cbearing += (20.0 + (51.0 / 60.0)) / (180 / M_PI); // Declination angle for the location of the rover (Tauranga, NZ)
+  // Correct for heading < 0deg and heading > 360deg
+  if (cbearing < 0) cbearing += 2 * M_PI; 
+  if (cbearing > 2 * M_PI) cbearing -= 2 * M_PI;
+  // Convert from radians to degrees
+  cbearing = cbearing * 180 / M_PI;
+
+  bearing = calcBearing(gps.location.lat(), gps.location.lng(), lat2, lon2);
+  
+}
+
+/*-----------------------------Bearing Calculation-----------------------------*/
+
+double toRad(double deg) { return deg * (PI / 180); }
+
+double calcBearing(double la1, double lo1, double la2, double lo2) {
+  return atan2(sin(toRad(lo2 - lo1)) * cos(toRad(la2)), cos(toRad(la1)) * sin(toRad(la2)) - sin(toRad(la1)) * cos(toRad(la2)) * cos(toRad(lo2 - lo1)));
 }
 
 void positionHandle()
@@ -99,7 +134,8 @@ void positionHandle()
     Serial.println("GPS cannot be validated");
     lcd.clear();
     lcd.setCursor(0, 0);
-    return lcd.println("GPS INVALID");
+    lcd.println("GPS INVALID");
+    return;
   }
 }
 
@@ -188,4 +224,20 @@ void stop()
   digitalWrite(lb, LOW);
   digitalWrite(rf, LOW);
   digitalWrite(rb, LOW);
+}
+
+/*-----------------------------Setup functions-----------------------------*/
+void compassInit() {
+  Serial.println("Initialize HMC5883L");
+  while (!compass.begin()) {
+    Serial.println("Could not find a valid HMC5883L sensor, check wiring!");
+    delay(500);
+  }
+  // Set measurement range
+  compass.setRange(HMC5883L_RANGE_1_3GA);  // Set measurement mode
+  compass.setMeasurementMode(HMC5883L_CONTINOUS);  // Set data rate
+  compass.setDataRate(HMC5883L_DATARATE_30HZ);  // Set number of samples averaged
+  compass.setSamples(HMC5883L_SAMPLES_8);  // Set calibration offset. See HMC5883L_calibration.ino
+  compass.setOffset(x_offset, y_offset, z_offset);  // Set offsets
+  Serial.println("HMC5883L initialized!");
 }
